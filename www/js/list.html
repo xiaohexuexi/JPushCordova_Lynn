@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>ELearning demo</title>
+<link rel="stylesheet" type="text/css" href="css/jquery.mobile-1.4.5.min.css">
+<link rel="stylesheet" type="text/css" href="css/listStyle.css">
+<script type="text/javascript" src="js/jquery.js"></script>
+<script type="text/javascript" src="cordova.js"></script>
+<script type="text/javascript" src="js/jquery-1.10.2.min.js"></script>
+<script type="text/javascript" src="js/database.js"></script>
+<script src="js/myDialog.js" type="text/javascript"></script>
+<script>
+	$(document).bind('mobileinit',function(){
+  	$.mobile.pushStateEnabled = false;
+  }); 
+</script>
+              
+<script type="text/javascript" src="js/jquery.mobile-1.4.5.min.js"></script>
+<script type="text/javascript">
+var unread = 0;
+var inView = false;
+//查询所有时调用的回调函数，将所有记录显示在页面中
+var searchMessageCallback = function(msgSearchArray){
+	var html = "";
+	console.log("msgSearchArray length is " + msgSearchArray.length);
+	unread =  msgSearchArray.length;
+	for (i = 0; i < msgSearchArray.length; i ++){
+		console.log("msgSearchArray: " + msgSearchArray[i].id + ", " 
+				+ msgSearchArray[i].content + ", " 
+				+ msgSearchArray[i].pushtime+ ", " 
+				+ msgSearchArray[i].read );
+		var before = "<li id='"+msgSearchArray[i].id+"'>"+
+		"<a href='#pagetwo' data-transition='none' class='ui-btn ui-btn-icon-right ui-icon-carat-r ui-btn-inline' style='display:inline-block;width:95%'>"+
+		"<img class='ui-li-icon ui-corner-none' src='";	
+		var imgPath;
+		if(msgSearchArray[i].read == 0){
+		imgPath = "images/list.png'/>";
+		}else{
+		imgPath = "images/nlist.png'/>";
+		unread = unread-1;
+		}
+		
+		var h2 = "<h2>"+msgSearchArray[i].content+"</h2>";
+		var p = "<p>"+showTime(msgSearchArray[i].pushtime)+"</p>";
+		var after = "</a>"+
+			"<div class='delete'><h1>删除</h1></div>"+
+		"</li>";
+		var html = html+before+imgPath+h2+p+after;
+	}
+
+		$("div #ul1").html(html);
+		$("div #ul1").listview('refresh'); 
+    	if(unread == 0){
+    		unread = "";
+    	}
+    	$("h1 sup").text(unread);//未读消息条数
+	};
+	
+//点击某个li时调用的函数，把按id查询到的消息内容和时间显示在页面上	
+var findMessageByIdCallback = function(msgFind){
+	var time = $("#time");
+	var content = $("#content");	
+	time.text(showTime(msgFind.pushtime));
+	content.text(msgFind.content);
+};
+
+//从详情页面回到list页面时或点击“已读”按钮调用，把当前的消息在页面中的显示状态更新为已读
+var readMessageCallback = function(ids){
+	if(ids.length == 1 && ids[0]==-1){
+		$("#ul1").find("img").attr("src","images/nlist.png");
+		unread = 0;
+	}else{
+		 $.each(ids,function(n,value) {
+			 var isRead = $("#"+value).find("img").attr("src");
+			 if(isRead == "images/list.png"){
+				 unread--;
+			 }
+			 $("#"+value).find("img").attr("src","images/nlist.png");
+		 });
+	}
+	if(unread == 0){
+		unread = "";
+	}
+	$("h1 sup").text(unread);//未读消息条数
+	console.log("readMessageCallback set read " + ids + " message");
+};
+
+//点击删除按钮时调用，把选中的消息从列表中删除
+var deleteMessageCallback = function(ids){ 
+	if(ids.length == 1 && ids[0] == -1){
+		$("#ul1").find("li").remove();
+		unread = 0;
+	}else{
+		 $.each(ids,function(n,value) {
+			 var isRead = $("#"+value).find("img").attr("src");
+			 if(isRead == "images/list.png"){
+				 unread--;
+			 }
+			 $("#"+value).remove();
+		 });
+	}
+	if(unread == 0){
+		unread = "";
+	}
+	$("h1 sup").text(unread);//未读消息条数
+	console.log("deleteMessageCallback delete message, return " + ids);	
+};
+
+//控制显示在页面上的时间
+var showTime = function(pushTime){
+	var msgTime = new Date(pushTime);//消息记录的时间
+	var msgDate = msgTime.getDate();//消息记录的日期
+	var nowDate = new Date().getDate();//当前时间的日期
+	var showTime; //显示在页面上的时间
+	if(msgDate == nowDate){//今天显示时分秒
+		showTime = timeDetail(msgTime.getHours())+":"+timeDetail(msgTime.getMinutes())+":"+timeDetail(msgTime.getSeconds());
+	}else if(msgDate == nowDate-1){//昨天显示昨天
+		showTime = "昨天";
+	}else{//更早显示年月日
+		showTime = msgTime.getFullYear()+"."+timeDetail((msgTime.getMonth()+1))+"."+timeDetail(msgTime.getDate());
+	}
+	return showTime;
+};
+//当月、日、时、分、秒小于10 时在实际值前面加0
+var timeDetail = function(trueTime){
+	var timeShow = trueTime < 10 ? "0"+trueTime :trueTime;
+	return timeShow;
+}
+ $(document).on("pagebeforecreate",function(){ 
+
+	//dorothy: head里面的script，先都保留
+	        var onDeviceReady = function() {
+	            console.log("JPushPlugin: Device ready!");
+	            initiateUI();
+	//dorothy: 这里创建db
+				createDB();		
+			 	searchMessage("",searchMessageCallback); 
+	        };
+
+	        var getRegistrationID = function() {
+	            window.plugins.jPushPlugin.getRegistrationID(onGetRegistrationID);
+	        };
+
+	        var onGetRegistrationID = function(data) {
+	            try {
+	                console.log("JPushPlugin:registrationID is " + data);
+
+	                if (data.length == 0) {
+	                    var t1 = window.setTimeout(getRegistrationID, 1000);
+	                }
+	                $("#registrationId").html(data);
+	            } catch (exception) {
+	                console.log(exception);
+	            }
+	        };
+
+	        var onTagsWithAlias = function(event) {
+	            try {
+	                console.log("onTagsWithAlias");
+	                var result = "result code:" + event.resultCode + " ";
+	                result += "tags:" + event.tags + " ";
+	                result += "alias:" + event.alias + " ";
+	                $("#tagAliasResult").html(result);
+	            } catch (exception) {
+	                console.log(exception)
+	            }
+	        };
+
+	        var onOpenNotification = function(event) {
+	            try {
+	                var alertContent;
+	                var jpushid;
+	                var extras;
+	                
+	                if (device.platform == "Android") {
+	                    alertContent = event.alert;
+	                    extras = event.extras;
+	                } else {
+	                    alertContent = event.aps.alert;
+	                    extras = event.aps.extras;
+	                }
+
+	                for(var i in extras) {
+    	                console.log("JPushPlugin:onOpenNotification extras " + i, ":" + extras[i]);
+                        if(i == "cn.jpush.android.NOTIFICATION_ID")
+                        {
+                            jpushid = extras[i];
+                        }
+                    } 
+	                
+	                console.log("JPushPlugin: onOpenNotification " + alertContent+", id=" + jpushid);
+					insertMessage(alertContent,jpushid,searchMessageCallback);
+	            } catch (exception) {
+	                console.log("JPushPlugin:onOpenNotification" + exception);
+	            }
+	        };
+
+	        var onReceiveNotification = function(event) {
+	            try {
+	                var alertContent;
+	                var jpushid;
+	                var extras;
+					
+	                if (device.platform == "Android") {
+	                    alertContent = event.alert;
+	                    extras = event.extras;
+	                } else {
+	                    alertContent = event.aps.alert;
+	                    extras = event.aps.extras;
+	                }
+/* 	                
+                    for(var i in event) {
+    	                console.log("JPushPlugin:onOpenNotification " + i, ":" + event[i]);
+                    } */
+                    
+                     for(var i in extras) {
+    	                console.log("JPushPlugin:onOpenNotification extras " + i, ":" + extras[i]);
+                        if(i == "cn.jpush.android.NOTIFICATION_ID")
+                        {
+                            jpushid = extras[i];
+                        }
+                    } 
+	                console.log("JPushPlugin:onReceiveNotification " + alertContent + ", id=" + jpushid); 
+
+	            	//dorothy: 这里插入接收到的消息
+	    	        console.log("JPushPlugin: onReceiveNotification " + alertContent);
+					insertMessage(alertContent,jpushid,searchMessageCallback);
+					//这个显示在接受的通知内容里面					
+	                $("#notificationResult").html(alertContent);
+	            } catch (exception) {
+	                console.log(exception);
+	            }
+	        };
+
+	        
+	        
+	        var onReceiveMessage = function(event) {
+	            try {
+	                var message;
+	                
+	                if (device.platform == "Android") {
+	                    message = event.message;
+	                } else {
+	                    message = event.content;
+	                }
+	                
+	                console.log("JPushPlugin:onReceiveMessage " + message);
+	                
+	                $("#messageResult").html(message);
+	            } catch (exception) {
+	                console.log("JPushPlugin:onReceiveMessage-->" + exception);
+	            }
+	        };
+
+	        var initiateUI = function() {
+	            try {
+	                window.plugins.jPushPlugin.init();
+	                getRegistrationID();
+	                if (device.platform != "Android") {
+	                    window.plugins.jPushPlugin.setDebugModeFromIos();
+	                    window.plugins.jPushPlugin.setApplicationIconBadgeNumber(0);
+	                } else {
+	                    window.plugins.jPushPlugin.setDebugMode(true);
+	                    window.plugins.jPushPlugin.setStatisticsOpen(true);
+	                }
+	            } catch (exception) {
+	                console.log(exception);
+	            }
+	            $("#setTagWithAliasButton").click(function(ev) {
+	                try {
+	                    var tag1 = $("#tagText1").attr("value");
+	                    var tag2 = $("#tagText2").attr("value");
+	                    var tag3 = $("#tagText3").attr("value");
+	                    var alias = $("#aliasText").attr("value");
+	                    var tags = [];
+
+	                    if (tag1 != "") {
+	                        tags.push(tag1);
+	                    }
+	                    if (tag2 != "") {
+	                        tags.push(tag2);
+	                    }
+	                    if (tag3 != "") {
+	                        tags.push(tag3);
+	                    }
+	                    window.plugins.jPushPlugin.setTagsWithAlias(tags, alias);
+	                } catch (exception) {
+	                    console.log(exception);
+	                }
+	            });
+	        };
+
+/* 	        var backButton = function(){
+	        	//readMessage(globalId,readMessageCallback);
+	        	alert("back键被按下");
+	        };
+	         */
+	        document.addEventListener("jpush.setTagsWithAlias", onTagsWithAlias, false);
+	        document.addEventListener("deviceready", onDeviceReady, false);
+	        document.addEventListener("jpush.openNotification", onOpenNotification, false);
+	        document.addEventListener("jpush.receiveNotification", onReceiveNotification, false);
+	        document.addEventListener("jpush.receiveMessage", onReceiveMessage, false);    	
+	        
+/* 	        document.addEventListener("backbutton", backButton, false);   */
+ });  
+ 
+$(document).on("pagecreate","#page",function(){
+  	$("#edit").on("click",function(){
+	if(!($(this).hasClass("cancle"))){  
+		$(".footer,.add,#choose,#check").removeClass("hidden");
+	   	$(".footer,.add,#choose,#check").addClass("show");
+	   	$("ul").removeClass("show");
+	   	$("ul").addClass("hidden");
+	   	$(this).text("取消");
+	   	$(this).addClass("cancle");
+	   	
+	   	$("form.ui-filterable").addClass("hidden");
+	   	$("fieldset div.ui-controlgroup-controls").children().remove();
+	   	var html =""; 
+		var isfrst;
+		var islast;
+		$("li").each(function(i){
+			if(i == 0){
+				isfirst = "class='ui-first-child'";
+			}else{
+				isfirst ="";
+			}
+			if(i == ($("ul li").length)-1){
+				islast = "class='ui-last-child'";
+			}else{
+				islast = "";
+			}			
+			if(($("ul li").length) == 1){ 
+				isfirst = "class='ui-first-child ui-last-child'"; 
+			} 
+			var input = "<input name='check"+i+"' id='check"+($(this).attr("id"))+"' type='checkbox'/>";
+			var label ="<label for='check"+($(this).attr("id"))+"'"+isfirst+islast+"><h2>"
+				+$(this).children().children("h2").text()+"</h2><p>"+
+				$(this).children().children("p").text()+"</p></label>";							
+				html = html+input+label;
+			$("#checklist div.ui-controlgroup-controls").html(html).trigger("create");
+		});
+	}else{ //点击取消
+		backToList();
+	}
+  });
+//全选功能 
+var isChoose =false ;
+$("#choose").on("click",function(){
+	if(!isChoose){
+		$(this).text("取消全选");
+		$("input[type='checkbox']").prop("checked",true).checkboxradio("refresh");
+		isChoose = true;
+	}else{
+		$(this).text("全选");
+		$("input[type='checkbox']").prop("checked",false).checkboxradio("refresh");
+		isChoose = false;
+	}
+});
+
+$("#delete").on("click",function(){
+	$.MsgBox.Confirm("温馨提示", "执行删除后将无法恢复，确定继续吗？", 
+			function () { 
+				deleteMessageById(getCheckedIds(),deleteMessageCallback);
+				$.MsgBox.Alert("消息", "恭喜您，消息已成功删除！"); 
+			});
+	backToList();
+});
+
+$("#read").on("click",function(){	
+	$.MsgBox.Confirm("温馨提示", "消息状态修改后将无法恢复，确定继续吗？", 
+			function () { 
+				readMessage(getCheckedIds(),readMessageCallback);
+				$.MsgBox.Alert("消息", "恭喜您，消息状态已成功修改为已读！"); 
+			});
+	backToList();
+});
+
+$("#ul1").delegate(".delete","tap",function(){
+ 	var deleteId = [$(this).parent().attr("id")];
+	$.MsgBox.Confirm("温馨提示", "执行删除后将无法恢复，确定继续吗？", 
+		function () { 
+			deleteMessageById(deleteId,deleteMessageCallback);
+			$.MsgBox.Alert("消息", "恭喜您，消息已成功删除！"); 
+		});
+});
+
+//遍历form中的checkbox，把状态为选中的checkbox的id存入数组中
+var getCheckedIds = function(){
+	var checkedIds = [];
+	var arr = [];
+	var j=0;
+	$("#check").find(":checkbox").each(function(i){
+		if($(this).is(":checked")){
+			 var idStr= $(this).attr("id");//
+			 arr[i] = idStr.substring(5);
+		}else{
+			arr[i] = "";
+		}			
+	});		
+	for(var i = 0;i<arr.length;i++){
+		if(arr[i] != ""){
+			checkedIds[j] = arr[i];
+			j++;
+		}
+	}
+	if(checkedIds.length == arr.length){
+		checkedIds = [-1];
+	}
+	console.log(checkedIds);
+	return checkedIds;
+};
+
+
+var backToList = function(){
+   	$(".footer,#choose,#check").removeClass("show");
+   	$(".footer,#choose,#check").addClass("hidden");
+   	$("ul").removeClass("hidden");
+   	$("ul").addClass("show"); 
+   	$("#edit").text("编辑");
+   	$("#edit").removeClass("cancle");
+	$("#choose").text("全选");
+}
+//左滑右滑事件
+  $.event.special.swipe.horizontalDistanceThreshold = 10;   
+  var first;
+  var last;
+	  $("#ul1").delegate("li","swipeleft",function(){	
+		  $("#ul1 li").each(function(i){
+			first = $(this).children().first();
+			last = $(this).children().last();
+			first.css("margin-left","0");
+			last.css("right","-15%");
+		  });
+		 	first = $(this).children().first();
+		 	last = $(this).children().last();
+		  	first.css("margin-left","-7%");
+		  	last.css("right","0");	 
+	  });	
+	  
+	  $("#ul1").delegate("li","swiperight",function(){
+		  first = $(this).children().first();
+		  last = $(this).children().last();
+		  first.css("margin-left","0");
+		  last.css("right","-15%");
+	  });
+	  
+	  var messageId;
+	  $("#ul1").delegate("li","tap",function(){
+			messageId = $(this).attr("id");
+			globalId = messageId;
+			findMessageById(messageId,findMessageByIdCallback);
+			
+
+			  var readId = [messageId];
+			  readMessage(readId,readMessageCallback);
+		});
+	  
+	  $("#pagetwo div a").on("tap",function(){/* 
+		  var readId = [messageId];
+		  readMessage(readId,readMessageCallback); */
+	  });
+});
+</script>
+</head>
+<body>
+<div data-role="page" id="page">
+	<div data-role="header"  data-tap-toggle="false" data-position="fixed" class="header">	
+		<h1>消息<sup></sup></h1>	
+		<span id="edit">编辑</span>	
+		<span id="choose" class="hidden">全选</span>
+	</div> 
+	<div role="main" class="ui-content">
+		<ul id="ul1" data-role="listview" data-inset="true" data-filter-placeholder="Search" data-filter="true" class="show">
+		</ul>
+	<form class="hidden" id="check">
+		<fieldset data-role="controlgroup" id="checklist">
+		</fieldset>
+	</form>
+	</div>
+	<div data-role="footer" data-tap-toggle="false" data-position="fixed" class="footer hidden">
+		<p class="add" id="delete">删除</p>
+		<p id="read" class="add">已读</p>		
+	</div>	
+</div>
+
+<div data-role="page" id="pagetwo">
+	<div data-role="header" data-tap-toggle="false"  data-position="fixed" class="header">
+		<h1>消息</h1>
+		<a href="#page" data-role="none"><img src="images/back.png"/></a>
+	</div> 
+	<div role="main" class="ui-content">
+		<p id="time"></p>
+		<hr/>
+		<p id="content"></p> 
+	</div> 	  
+		<div data-role="footer" data-tap-toggle="false" data-position="fixed" class="footer hidden">
+	</div>
+</div> 
+</body>
+</html>

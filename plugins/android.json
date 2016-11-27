@@ -1,0 +1,35 @@
+{
+    "prepare_queue": {
+        "installed": [],
+        "uninstalled": []
+    },
+    "config_munge": {
+        "files": {}
+    },
+    "installed_plugins": {
+        "jpush-phonegap-plugin": {
+            "API_KEY": "e6da113ea2e9675ea2db4dfa",
+            "PACKAGE_NAME": "com.my.jpushCprdova"
+        },
+        "cordova-plugin-sqlite-2": {
+            "PACKAGE_NAME": "com.my.jpushCprdova"
+        },
+        "cordova-plugin-whitelist": {
+            "PACKAGE_NAME": "com.my.jpushCprdova"
+        },
+        "cordova-plugin-console": {
+            "PACKAGE_NAME": "com.my.jpushCprdova"
+        },
+        "cordova-plugin-file": {
+            "PACKAGE_NAME": "com.my.jpushCprdova"
+        }
+    },
+    "dependent_plugins": {
+        "cordova-plugin-device": {
+            "PACKAGE_NAME": "com.my.jpushCprdova"
+        },
+        "cordova-plugin-compat": {
+            "PACKAGE_NAME": "com.my.jpushCprdova"
+        }
+    }
+}

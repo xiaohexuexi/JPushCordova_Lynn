@@ -1,0 +1,164 @@
+@charset "utf-8";
+/*页面初始化*/
+body,div,dl,dt,dd,ul,ol,li,h1,h2,h3,h4,h5,h6,pre,code,legend,button
+form,fieldset,input,textarea,p,blockquote,th,td {   
+　　padding: 0;   
+　　margin: 0;   
+}
+body{
+	font-family:Arial, Helvetica, sans-serif;
+}
+
+/*公共部分*/
+#page div.header,
+#pagetwo div.header
+{
+	background-color:#F63;
+	overflow:hidden; 
+}
+#page div.header h1,
+#pagetwo div.header h1{
+	color:#FFF;
+	font-size:24px;
+   	font-weight:bold;
+  	clear:both;
+  	margin-top:1%;
+}	  
+#page div.footer,
+#page div.footer{
+	overflow:hidden;
+	background-color:#ddd;
+	height:8%;
+	position:fixed;
+	bottom:0px;
+	width:100%;
+}
+.hidden{
+	display:none;
+}
+.show{
+	display:block;
+}
+
+/*list部分*/
+#page div.header span{
+	float:right;
+	color:#fff;
+	font-size:18px;
+	width:10%;
+}	
+#edit{
+	padding-right:7%;
+	white-space:nowrap;
+}
+#choose{
+	margin-right:63%;
+	white-space:nowrap;
+}	
+
+h1 sup{
+	font-size:14px;
+}
+ul li div{
+	position:absolute;
+	right:-15%;
+	width:15%;
+	height:100%;
+	background:#F63;
+	border:none;
+	color:#fff;
+	display:inline-block;
+	text-align:center;
+}
+ul{
+	overflow:hidden;
+}
+ul h2{
+	font-size:16px;
+	color:#F00;
+	width:95%;
+}
+
+ul p{
+	font-size:12px; 
+	color:#666
+}	 
+ul li div h1{
+	color:#fff;
+	padding-top:42.5%; 
+}
+li img{
+	padding-top:5%;
+}
+ul li{
+	overflow:hidden;
+	white-space:nowrap;
+	position:relative;
+	text-overflow: ellipsis;
+}
+
+#page{
+	width:100%
+	}
+.add{
+	color:#444;
+	font-size:18px;
+	display:inline-block;
+	width:10%;
+	margin-left:8%;
+}
+#read{
+	margin-left:65%;
+} 
+
+label h2{
+	font-size: 1em;
+    font-weight: 700;
+    display: block;
+    margin: .45em 0;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    white-space: nowrap;
+	color:#F00
+}
+label p{
+	font-size: .75em;
+    font-weight: 400;
+    display: block;
+    margin: .6em 0;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    white-space: nowrap;
+	color:#666
+}
+
+.ui-page-theme-a .ui-btn.ui-btn-active{
+	background-color: #e8e8e8;
+    border-color: #ededed;
+    color: #fff;
+    text-shadow: 0 1px 0 #ededed;
+}
+
+/*view部分*/    
+hr{
+	width:100%;
+	margin-right:10%; 
+	color:#ddd;
+}
+#pagetwo div.header{
+	padding-bottom:5.7%;
+}
+ #pagetwo div a{
+	margin-left:3%;
+	margin-top:11%;/*
+	opacity:0.2; 
+	border-color:#fff;
+	background-color:#bbb; */
+} 
+#pagetwo div p{
+	word-wrap: break-word;
+	margin-left:5%;
+}
+.ui-icon-myicon:after {/* 
+	background-image: url("../images/back.png");  */
+} 
