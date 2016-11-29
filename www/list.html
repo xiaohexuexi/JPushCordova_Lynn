@@ -21,7 +21,6 @@
 <script type="text/javascript">
 var unread = 0;
 var inView = false;
-var globalId = "";
 //查询所有时调用的回调函数，将所有记录显示在页面中
 var searchMessageCallback = function(msgSearchArray){
 	var html = "";
@@ -71,6 +70,7 @@ var findMessageByIdCallback = function(msgFind){
 var readMessageCallback = function(ids){
 	if(ids.length == 1 && ids[0]==-1){
 		$("#ul1").find("img").attr("src","images/nlist.png");
+		unread = 0;
 	}else{
 		 $.each(ids,function(n,value) {
 			 var isRead = $("#"+value).find("img").attr("src");
@@ -91,6 +91,7 @@ var readMessageCallback = function(ids){
 var deleteMessageCallback = function(ids){ 
 	if(ids.length == 1 && ids[0] == -1){
 		$("#ul1").find("li").remove();
+		unread = 0;
 	}else{
 		 $.each(ids,function(n,value) {
 			 var isRead = $("#"+value).find("img").attr("src");
@@ -170,15 +171,29 @@ var timeDetail = function(trueTime){
 	        var onOpenNotification = function(event) {
 	            try {
 	                var alertContent;
+	                var jpushid;
+	                var extras;
 	                
 	                if (device.platform == "Android") {
 	                    alertContent = event.alert;
+	                    extras = event.extras;
+	                    
+	                    for(var i in extras) {
+	    	                console.log("JPushPlugin:onOpenNotification extras " + i, ":" + extras[i]);
+	                        if(i == "cn.jpush.android.NOTIFICATION_ID")
+	                        {
+	                            jpushid = extras[i];
+	                        }
+	                    } 
 	                } else {
 	                    alertContent = event.aps.alert;
+	                    jpushid = event._j_msgid;
 	                }
 
-	                console.log("JPushPlugin:onOpenNotification " + alertContent);
 	                
+	                
+	                console.log("JPushPlugin: onOpenNotification " + alertContent+", id=" + jpushid);
+					insertMessage(alertContent,jpushid,searchMessageCallback);
 	            } catch (exception) {
 	                console.log("JPushPlugin:onOpenNotification" + exception);
 	            }
@@ -187,16 +202,31 @@ var timeDetail = function(trueTime){
 	        var onReceiveNotification = function(event) {
 	            try {
 	                var alertContent;
-
+	                var jpushid;
+	                var extras;
+					
 	                if (device.platform == "Android") {
 	                    alertContent = event.alert;
+	                    extras = event.extras;
+	                    
+	                     for(var i in extras) {
+	    	                console.log("JPushPlugin:onOpenNotification extras " + i, ":" + extras[i]);
+	                        if(i == "cn.jpush.android.NOTIFICATION_ID")
+	                        {
+	                            jpushid = extras[i];
+	                        }
+	                    } 
+	                    
 	                } else {
 	                    alertContent = event.aps.alert;
+	                    jpushid = event._j_msgid;
 	                }
+
+	                console.log("JPushPlugin:onReceiveNotification " + alertContent + ", id=" + jpushid); 
 
 	            	//dorothy: 这里插入接收到的消息
 	    	        console.log("JPushPlugin: onReceiveNotification " + alertContent);
-					insertMessage(alertContent,searchMessageCallback);
+					insertMessage(alertContent,jpushid,searchMessageCallback);
 					//这个显示在接受的通知内容里面					
 	                $("#notificationResult").html(alertContent);
 	            } catch (exception) {
